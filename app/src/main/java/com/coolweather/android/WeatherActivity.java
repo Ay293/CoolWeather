@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -52,6 +53,7 @@ public class WeatherActivity extends AppCompatActivity {
     private String weatherId;
     public DrawerLayout drawerLayout;
     private Button navButton;
+    private Button addButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +87,14 @@ public class WeatherActivity extends AppCompatActivity {
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);// 设置下拉刷新进度条的颜色
         drawerLayout = findViewById(R.id.drawer_layout);
         navButton = findViewById(R.id.nav_button);
+        addButton = findViewById(R.id.add_city_button);
+
+        //常用城市天气切换
+        Intent intent_add = getIntent();
+        String Id = intent_add.getStringExtra("id");
+        if (!(TextUtils.isEmpty(Id))){
+            requestWeather(Id);
+        }
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = prefs.getString("weather",null);
@@ -118,6 +128,15 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 drawerLayout.openDrawer(GravityCompat.START); // 打开滑动菜单
+            }
+        });
+
+        //添加常用城市跳转页面
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) { //跳转到添加常用城市界面
+                Intent intent = new Intent(WeatherActivity.this,AddCityActivity.class);//从天气页面跳转到添加常用城市界面
+                startActivity(intent);
             }
         });
     }
