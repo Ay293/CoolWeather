@@ -47,6 +47,8 @@
                     <include layout="@layout/aqi" />
 
                     <include layout="@layout/suggestion" />
+
+                    <include layout="@layout/history" />
                 </LinearLayout>
             </ScrollView>
 

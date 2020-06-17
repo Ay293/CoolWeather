@@ -52,6 +52,8 @@ public class WeatherActivity extends AppCompatActivity {
     private String weatherId;
     public DrawerLayout drawerLayout;
     private Button navButton;
+    private Button myButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +87,15 @@ public class WeatherActivity extends AppCompatActivity {
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);// 设置下拉刷新进度条的颜色
         drawerLayout = findViewById(R.id.drawer_layout);
         navButton = findViewById(R.id.nav_button);
+
+        myButton=findViewById(R.id.btn1);
+        myButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(WeatherActivity.this, Main2Activity.class);
+                startActivity(intent);
+            }
+        });
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = prefs.getString("weather",null);
