@@ -20,6 +20,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Weather;
@@ -36,28 +40,34 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
-    private ScrollView weatherLayout;
+    private TextView positionText;  //定位显示
+    public LocationClient mLocationClient;  //定位实现
+    private ScrollView weatherLayout;  //滑动显示区
+    public DrawerLayout drawerLayout;  //滑动菜单
+    private Button navButton;  //启动滑动菜单的按钮
+    private LinearLayout forecastLayout;  //近几天天气情况
+    private ImageView bingPicImg;  //背景图片
+    public SwipeRefreshLayout swipeRefreshLayout;  //下拉刷新
+    private String weatherId;
     private TextView titleCity;
     private TextView titleUpdateTime;
     private TextView degreeText;
     private TextView weatherInfoText;
-    private LinearLayout forecastLayout;
     private TextView aqiText;
     private TextView pm25Text;
     private TextView comfortText;
     private TextView carWashText;
     private TextView sportText;
-    private ImageView bingPicImg;
-    public SwipeRefreshLayout swipeRefreshLayout;
-    private String weatherId;
-    public DrawerLayout drawerLayout;
-    private Button navButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if(Build.VERSION.SDK_INT >= 21){
+        mLocationClient=new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(new MyLocationListener());//位置监听器
+
+        if(Build.VERSION.SDK_INT >= 21){  //背景图与状态栏融合，对SDK版本有要求
             View decorView = getWindow().getDecorView(); // 获取DecorView
             decorView.setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -67,6 +77,7 @@ public class WeatherActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_weather);
+        positionText=findViewById(R.id.position);
 
         //初始化各组件
         weatherLayout = findViewById(R.id.weather_layout);
@@ -101,16 +112,16 @@ public class WeatherActivity extends AppCompatActivity {
         }
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
-            public void onRefresh() { // 设置下拉刷新监听器
+            public void onRefresh() { // 设置下拉刷新监听器,请求重新加载天气
                 requestWeather(weatherId);
             }
         });
 
-        String bingPic = prefs.getString("bing_pic",null); // 尝试从缓存中读取
+        String bingPic = prefs.getString("bing_pic",null); // 尝试从缓存中读取背景图
         if(bingPic != null){
-            Glide.with(this).load(bingPic).into(bingPicImg);
+            Glide.with(this).load(bingPic).into(bingPicImg);  //如果有则用Glide加载
         }else{
-            loadBingPic(); // 没有读取到则加载
+            loadBingPic(); //如果没有则调用此方法网络请求加载
         }
 
         //打开滑动菜单
@@ -136,6 +147,8 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        Toast.makeText(WeatherActivity.this,"定位当前城市成功！",Toast.LENGTH_SHORT).show();
+                        requestLocation();
                         if(weather!=null && "ok".equals(weather.status)){
                             //缓存有效的weather对象(实际上缓存的是字符串)
                             SharedPreferences.Editor editor = PreferenceManager
@@ -218,7 +231,7 @@ public class WeatherActivity extends AppCompatActivity {
         String requestBingPic = "http://guolin.tech/api/bing_pic";
         HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
             @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+            public void onResponse(Call call, Response response) throws IOException {
                 final String bingPic = response.body().string(); // 获取背景图链接
                 SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
                 editor.putString("bing_pic",bingPic);
@@ -231,9 +244,42 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
             @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
             }
         });
+    }
+
+    public class MyLocationListener implements BDLocationListener {
+        @Override
+        public void onReceiveLocation(final BDLocation location) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    StringBuilder currentPosition=new StringBuilder();
+                    currentPosition.append(location.getDistrict());
+                    positionText.setText(currentPosition);
+                    Toast.makeText(WeatherActivity.this,"djjfjhsj",Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    public void requestLocation(){
+        initLocation();
+        mLocationClient.start();//响应监听器
+    }
+
+    public void initLocation(){
+        LocationClientOption option=new LocationClientOption();
+        option.setIsNeedAddress(true);
+        mLocationClient.setLocOption(option);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mLocationClient.stop();
     }
 }

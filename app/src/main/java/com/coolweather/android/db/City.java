@@ -4,9 +4,9 @@ import org.litepal.crud.DataSupport;
 
 public class City extends DataSupport {
     private int id; //DingWeiBianHao
-    private String cityName;
-    private int cityCode;
-    private int provinceCode;
+    private String cityName;    //城市名字
+    private int cityCode;   //市的代号
+    private int provinceCode;   //当前市所属省的id
 
     public int getId() {
         return id;
