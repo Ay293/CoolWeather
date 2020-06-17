@@ -5,61 +5,98 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.Forecast;
+import com.coolweather.android.gson.Poetry;
 import com.coolweather.android.gson.Weather;
 import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
+import com.jinrishici.sdk.android.JinrishiciClient;
+import com.jinrishici.sdk.android.factory.JinrishiciFactory;
+import com.jinrishici.sdk.android.listener.JinrishiciCallback;
+import com.jinrishici.sdk.android.model.JinrishiciRuntimeException;
+import com.jinrishici.sdk.android.model.PoetySentence;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
-    private ScrollView weatherLayout;
+    private TextView positionText;  //定位显示
+    public LocationClient mLocationClient;  //定位实现
+    private ScrollView weatherLayout;  //滑动显示区
+    public DrawerLayout drawerLayout;  //滑动菜单
+    private Button navButton;  //启动滑动菜单的按钮
+    private LinearLayout forecastLayout;  //近几天天气情况
+    private ImageView bingPicImg;  //背景图片
+    public SwipeRefreshLayout swipeRefreshLayout;  //下拉刷新
+    private String weatherId;
     private TextView titleCity;
     private TextView titleUpdateTime;
     private TextView degreeText;
     private TextView weatherInfoText;
-    private LinearLayout forecastLayout;
     private TextView aqiText;
     private TextView pm25Text;
     private TextView comfortText;
     private TextView carWashText;
     private TextView sportText;
-    private ImageView bingPicImg;
-    public SwipeRefreshLayout swipeRefreshLayout;
-    private String weatherId;
-    public DrawerLayout drawerLayout;
-    private Button navButton;
     private Button myButton;
 
 
+
+    private Button addButton;
+
+    private TextView shici;
+    private Typeface face;
+    private TextView poem;
+    private TextView title;
+    private TextView dynasty;
+    private  TextView author;
+    private TextView content;
+    private  TextView reason;
+
+    @SuppressLint("ResourceType")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if(Build.VERSION.SDK_INT >= 21){
+        mLocationClient=new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(new MyLocationListener());//位置监听器
+
+        if(Build.VERSION.SDK_INT >= 21){  //背景图与状态栏融合，对SDK版本有要求
             View decorView = getWindow().getDecorView(); // 获取DecorView
             decorView.setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -69,8 +106,14 @@ public class WeatherActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_weather);
-
+        positionText=findViewById(R.id.position);
         //初始化各组件
+        poem = findViewById(R.id.data_content);
+        title = findViewById(R.id.origin_title);
+        dynasty = findViewById(R.id.origin_dynasty);
+        author = findViewById(R.id.origin_author);
+        content = findViewById(R.id.origin_content);
+        reason = findViewById(R.id.reason);
         weatherLayout = findViewById(R.id.weather_layout);
         titleCity = findViewById(R.id.title_city);
         titleUpdateTime = findViewById(R.id.title_update_time);
@@ -87,6 +130,16 @@ public class WeatherActivity extends AppCompatActivity {
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);// 设置下拉刷新进度条的颜色
         drawerLayout = findViewById(R.id.drawer_layout);
         navButton = findViewById(R.id.nav_button);
+        addButton = findViewById(R.id.add_city);
+        //常用城市天气切换
+        Intent intent_add = getIntent();
+        String Id = intent_add.getStringExtra("id");
+        if (!(TextUtils.isEmpty(Id))){
+            requestWeather(Id);
+        }
+        shici = findViewById(R.id.data_content);// 找到对应的诗词控件
+        face = Typeface.createFromAsset(shici.getContext().getAssets(), "newFont.TTF");// 这里是使用Typeface获取到放在assets里的字体
+        shici.setTypeface(face);// 将字体运用到控件当中
 
         myButton=findViewById(R.id.btn1);
         myButton.setOnClickListener(new View.OnClickListener() {
@@ -94,6 +147,42 @@ public class WeatherActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(WeatherActivity.this, Main2Activity.class);
                 startActivity(intent);
+            }
+        });
+
+
+
+
+
+        JinrishiciFactory.init(this);
+        JinrishiciClient client = new JinrishiciClient();
+        client.getOneSentenceBackground(new JinrishiciCallback() {
+            @Override
+            public void done(PoetySentence poetySentence) {
+                //TODO do something
+                getPoemToken();
+                title.setText(poetySentence.getData().getOrigin().getTitle());
+                dynasty.setText(poetySentence.getData().getOrigin().getDynasty());
+                author.setText(poetySentence.getData().getOrigin().getAuthor());
+                String[] arr = new String[100];
+                for(int i=0;i<=poetySentence.getData().getOrigin().getContent().size();i++){
+                    arr[i]= String.valueOf(poetySentence.getData().getOrigin().getContent());
+                    System.out.println(arr[i]);
+                    content.setText(arr[i]);
+                }
+                String[] arr1 = new String[5];
+                for(int i=0;i<=poetySentence.getData().getMatchTags().size();i++){
+                    arr1[i] = String.valueOf(poetySentence.getData().getMatchTags());
+                    System.out.println(arr1[i]);
+                }
+                reason.setText(String.valueOf(arr1[0]));
+                poem.setText(poetySentence.getData().getContent());
+                System.out.println(poetySentence.getData().getContent());
+            }
+
+            @Override
+            public void error(JinrishiciRuntimeException e) {
+                //TODO do something else
             }
         });
 
@@ -112,16 +201,16 @@ public class WeatherActivity extends AppCompatActivity {
         }
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
-            public void onRefresh() { // 设置下拉刷新监听器
+            public void onRefresh() { // 设置下拉刷新监听器,请求重新加载天气
                 requestWeather(weatherId);
             }
         });
 
-        String bingPic = prefs.getString("bing_pic",null); // 尝试从缓存中读取
+        String bingPic = prefs.getString("bing_pic",null); // 尝试从缓存中读取背景图
         if(bingPic != null){
-            Glide.with(this).load(bingPic).into(bingPicImg);
+            Glide.with(this).load(bingPic).into(bingPicImg);  //如果有则用Glide加载
         }else{
-            loadBingPic(); // 没有读取到则加载
+            loadBingPic(); //如果没有则调用此方法网络请求加载
         }
 
         //打开滑动菜单
@@ -129,6 +218,15 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 drawerLayout.openDrawer(GravityCompat.START); // 打开滑动菜单
+            }
+        });
+
+        //添加常用城市跳转页面
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) { //跳转到添加常用城市界面
+                Intent intent = new Intent(WeatherActivity.this,AddCityActivity.class);//从天气页面跳转到添加常用城市界面
+                startActivity(intent);
             }
         });
     }
@@ -147,6 +245,8 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        Toast.makeText(WeatherActivity.this,"定位当前城市成功！",Toast.LENGTH_SHORT).show();
+                        requestLocation();
                         if(weather!=null && "ok".equals(weather.status)){
                             //缓存有效的weather对象(实际上缓存的是字符串)
                             SharedPreferences.Editor editor = PreferenceManager
@@ -229,7 +329,7 @@ public class WeatherActivity extends AppCompatActivity {
         String requestBingPic = "http://guolin.tech/api/bing_pic";
         HttpUtil.sendOkHttpRequest(requestBingPic, new Callback() {
             @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+            public void onResponse(Call call, Response response) throws IOException {
                 final String bingPic = response.body().string(); // 获取背景图链接
                 SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(WeatherActivity.this).edit();
                 editor.putString("bing_pic",bingPic);
@@ -242,9 +342,166 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
             @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
             }
         });
     }
+
+    public class MyLocationListener implements BDLocationListener {
+        @Override
+        public void onReceiveLocation(final BDLocation location) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    StringBuilder currentPosition=new StringBuilder();
+                    currentPosition.append(location.getDistrict());
+                    positionText.setText(currentPosition);
+                    Toast.makeText(WeatherActivity.this,"djjfjhsj",Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    public void requestLocation(){
+        initLocation();
+        mLocationClient.start();//响应监听器
+    }
+
+    public void initLocation(){
+        LocationClientOption option=new LocationClientOption();
+        option.setIsNeedAddress(true);
+        mLocationClient.setLocOption(option);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mLocationClient.stop();
+    }
+
+
+
+    /** 本段代码实现了从今日诗词api获得token
+     * 并存储在本地sharepreference里，
+     * 便于后面返回json数据使用 **/
+
+    public void getPoemToken(){
+        String url = "https://v2.jinrishici.com/token";
+        HttpUtil.sendOkHttpRequest(url, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                System.out.println("获取Token失败！");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if(response != null){
+                    try {
+                        String responseData=response.body().string();
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        String token = jsonObject.getString(String.valueOf("data"));
+                        System.out.println("当前获取token为："+token);
+                        System.out.println("获取Token成功！！");
+                        if (check()){
+                            System.out.println("本地已有token数据，请直接使用！！");
+                            read();
+                        }else{
+                            saveToPre(token);
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }}
+        });
+    }
+
+    /** sharepreference类的存储和读取方法
+     * @return**/
+    private String readPre() {
+        SharedPreferences sp = getSharedPreferences("TokenName",MODE_PRIVATE);
+        String Token = sp.getString("Token","");
+        if(Token != null){
+            System.out.println("从sharepreference读取Token成功！！");
+        }else {
+            System.out.println("本地无数据，请重新获取！");
+        }
+
+        return Token;
+
+    }
+    private String read(){
+        SharedPreferences sp = getSharedPreferences("TokenName",MODE_PRIVATE);
+        String Token = sp.getString("Token","");
+        System.out.println("本地Token为：" +Token);
+        return Token;
+    }
+
+    /** 检查本地是否有数据**/
+    private boolean check(){
+        if(readPre() !=null){
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+
+    /** 存储token到本地**/
+    public void saveToPre(String token) {
+        SharedPreferences sp = getSharedPreferences("TokenName",MODE_PRIVATE);
+        SharedPreferences.Editor edit  = sp.edit();
+        edit.putString("Token",token);
+        edit.apply();
+        System.out.println("存入Token成功！！");
+    }
+
+    public void getThePoem(){
+        String TOK =  read();
+        Request.Builder builder = new Request.Builder()
+                .url("https://v2.jinrishici.com/sentence")
+                .addHeader( "X-User-Token", TOK );
+        Request build = builder.build();
+
+        OkHttpClient client = new OkHttpClient.Builder().readTimeout( 5000, TimeUnit.SECONDS ).build();
+        Call call = client.newCall( build );
+        call.enqueue( new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                System.out.println("获取数据失败！");
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response != null){
+                    try {
+                        final String responseData = response.body().string();
+                        final Poetry p = Utility.handlePoetryResponse(responseData);
+                        JSONObject poetry = new JSONObject(responseData);
+                        System.out.println(poetry);
+                        SharedPreferences.Editor editor = PreferenceManager
+                                .getDefaultSharedPreferences(WeatherActivity.this).edit();
+                        editor.putString("poetry", responseData);
+                        editor.clear();
+                        editor.apply();
+
+
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        });
+    }
+
+    public void showPoetry(Poetry poetry){
+        String content = poetry.data.singlePoem;
+        TextView theshowpoem =  findViewById(R.id.data_content);
+        theshowpoem.setText(content);
+    }
+
+
 }

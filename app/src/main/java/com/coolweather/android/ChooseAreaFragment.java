@@ -2,6 +2,7 @@ package com.coolweather.android;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
 
 import com.coolweather.android.db.City;
 import com.coolweather.android.db.County;
@@ -43,24 +45,25 @@ public class ChooseAreaFragment extends Fragment {
     /**
      * 准备一些控件
      */
-    private ProgressDialog progressDialog;
-    private TextView titleText;
-    private Button backButton;
-    private ListView listView;
-    private ArrayAdapter<String> adapter;
-    private List<String> dataList = new ArrayList<>();
+    private ProgressDialog progressDialog;  //加载中显示页面
+    private TextView titleText; //标题
+    private Button backButton;  //返回键
+    private ListView listView;  //省市县加载显示
+    private ArrayAdapter<String> adapter;   //list view的适配器
+    private List<String> dataList = new ArrayList<>();//数组，用于存放list view中的省市县数据，以便初始化适配器
     /**
      * 省、市、县的列表
      */
-    private List<Province> provinceList;
-    private List<City> cityList;
-    private List<County> countyList;
+    private List<Province> provinceList;//省列表
+    private List<City> cityList;    //市列表
+    private List<County> countyList;    //县列表
     // 选中的省
     private Province selectedProvince;
     // 选中的市
     private City selectedCity;
     // 当前选中的级别
     private int currentLevel;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -72,6 +75,7 @@ public class ChooseAreaFragment extends Fragment {
         listView.setAdapter(adapter);
         return view;
     }
+
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
@@ -141,7 +145,7 @@ public class ChooseAreaFragment extends Fragment {
     private void queryCities() {
         titleText.setText(selectedProvince.getProvinceName());
         backButton.setVisibility(View.VISIBLE);
-        cityList = DataSupport.where("provinceCode=?", String.valueOf(selectedProvince.getId()))
+        cityList = DataSupport.where("provinceId=?", String.valueOf(selectedProvince.getId()))
                 .find(City.class);
         if (cityList.size() > 0) {
             dataList.clear();
@@ -235,6 +239,7 @@ public class ChooseAreaFragment extends Fragment {
             progressDialog.setMessage("正在加载...");
             progressDialog.setCanceledOnTouchOutside(false);
         }
+        progressDialog.show();
     }
     /**
      * 关闭进度对话框

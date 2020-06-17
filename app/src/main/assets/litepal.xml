@@ -2,6 +2,7 @@
     <dbname value="cool_weather" />
     <version value="1" />  <!--Database Version-->
     <list>
+        //将3个实体类添加到映射列表中
         <mapping class="com.coolweather.android.db.Province"/>
         <mapping class="com.coolweather.android.db.City"/>
         <mapping class="com.coolweather.android.db.County"/>
