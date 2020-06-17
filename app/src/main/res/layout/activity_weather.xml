@@ -42,11 +42,14 @@
 
                     <include layout="@layout/now" />
 
+                    <include layout="@layout/poem" />
+
                     <include layout="@layout/forecast" />
 
                     <include layout="@layout/aqi" />
 
                     <include layout="@layout/suggestion" />
+                    <include layout="@layout/poetryshow" />
                 </LinearLayout>
             </ScrollView>
 

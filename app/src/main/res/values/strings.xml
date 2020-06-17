@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MyCoolWeather</string>
+    <string name="titlecolor">今日赋诗：</string>
 </resources>
