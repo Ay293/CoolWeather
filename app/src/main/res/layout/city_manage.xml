@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize">
+
+    <!-- 添加滑动菜单 -->
+    <androidx.drawerlayout.widget.DrawerLayout
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+            <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#03A9F4">
+
+        <!-- 居左，返回天气显示界面 -->
+        <Button
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:id="@+id/back_button"
+            android:layout_marginLeft="10dp"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/ic_back"/>
+
+        <!-- 居中显示城市管理 -->
+        <TextView
+            android:id="@+id/title_cityManage"
+            android:text="城市管理"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:textColor="#fff"
+            android:textSize="20sp" />
+
+        <!-- 居右显示添加城市按钮 -->
+        <Button
+            android:id="@+id/add_city_button"
+            android:text="+添加"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textSize="20sp"
+            android:textColor="#fff"
+            android:background="#03A9F4"/>
+
+    </RelativeLayout>
+
+        <!-- 滑动菜单中的内容 -->
+        <fragment
+            android:id="@+id/choose_area_fragment"
+            android:name="com.coolweather.android.ChooseCityFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="start" />
+</androidx.drawerlayout.widget.DrawerLayout>
+
+</RelativeLayout>

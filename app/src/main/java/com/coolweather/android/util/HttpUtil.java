@@ -10,6 +10,9 @@ public class HttpUtil {
         Request request = new Request.Builder().url(address).build(); // 解析请求地址
         client.newCall(request).enqueue(callback); // 注册用于处理服务器相应的回调
     }
+
+
+
 }
 
 

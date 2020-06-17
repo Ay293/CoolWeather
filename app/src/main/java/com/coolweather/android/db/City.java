@@ -4,9 +4,15 @@ import org.litepal.crud.DataSupport;
 
 public class City extends DataSupport {
     private int id; //DingWeiBianHao
+<<<<<<< HEAD
     private String cityName;    //城市名字
     private int cityCode;   //市的代号
     private int provinceCode;   //当前市所属省的id
+=======
+    private String cityName;
+    private int cityCode;
+    private int provinceId;
+>>>>>>> 02b2270336889e4747d8275357fe49223900ca0f
 
     public int getId() {
         return id;
@@ -32,11 +38,11 @@ public class City extends DataSupport {
         this.cityCode = cityCode;
     }
 
-    public int getProvinceCode() {
-        return provinceCode;
+    public int getProvinceId() {
+        return provinceId;
     }
 
-    public void setProvinceCode(int provinceCode) {
-        this.provinceCode = provinceCode;
+    public void setProvinceId(int provinceId) {
+        this.provinceId = provinceId;
     }
 }

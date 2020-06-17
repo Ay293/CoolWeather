@@ -5,15 +5,19 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -26,17 +30,28 @@ import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.Forecast;
+import com.coolweather.android.gson.Poetry;
 import com.coolweather.android.gson.Weather;
 import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
+import com.jinrishici.sdk.android.JinrishiciClient;
+import com.jinrishici.sdk.android.factory.JinrishiciFactory;
+import com.jinrishici.sdk.android.listener.JinrishiciCallback;
+import com.jinrishici.sdk.android.model.JinrishiciRuntimeException;
+import com.jinrishici.sdk.android.model.PoetySentence;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
@@ -60,6 +75,18 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView sportText;
 
 
+    private Button addButton;
+
+    private TextView shici;
+    private Typeface face;
+    private TextView poem;
+    private TextView title;
+    private TextView dynasty;
+    private  TextView author;
+    private TextView content;
+    private  TextView reason;
+
+    @SuppressLint("ResourceType")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,8 +105,13 @@ public class WeatherActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_weather);
         positionText=findViewById(R.id.position);
-
         //初始化各组件
+        poem = findViewById(R.id.data_content);
+        title = findViewById(R.id.origin_title);
+        dynasty = findViewById(R.id.origin_dynasty);
+        author = findViewById(R.id.origin_author);
+        content = findViewById(R.id.origin_content);
+        reason = findViewById(R.id.reason);
         weatherLayout = findViewById(R.id.weather_layout);
         titleCity = findViewById(R.id.title_city);
         titleUpdateTime = findViewById(R.id.title_update_time);
@@ -96,6 +128,52 @@ public class WeatherActivity extends AppCompatActivity {
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);// 设置下拉刷新进度条的颜色
         drawerLayout = findViewById(R.id.drawer_layout);
         navButton = findViewById(R.id.nav_button);
+
+        addButton = findViewById(R.id.add_city);
+
+        //常用城市天气切换
+        Intent intent_add = getIntent();
+        String Id = intent_add.getStringExtra("id");
+        if (!(TextUtils.isEmpty(Id))){
+            requestWeather(Id);
+        }
+        shici = findViewById(R.id.data_content);// 找到对应的诗词控件
+        face = Typeface.createFromAsset(shici.getContext().getAssets(), "newFont.TTF");// 这里是使用Typeface获取到放在assets里的字体
+        shici.setTypeface(face);// 将字体运用到控件当中
+
+
+
+        JinrishiciFactory.init(this);
+        JinrishiciClient client = new JinrishiciClient();
+        client.getOneSentenceBackground(new JinrishiciCallback() {
+            @Override
+            public void done(PoetySentence poetySentence) {
+                //TODO do something
+                getPoemToken();
+                title.setText(poetySentence.getData().getOrigin().getTitle());
+                dynasty.setText(poetySentence.getData().getOrigin().getDynasty());
+                author.setText(poetySentence.getData().getOrigin().getAuthor());
+                String[] arr = new String[100];
+                for(int i=0;i<=poetySentence.getData().getOrigin().getContent().size();i++){
+                    arr[i]= String.valueOf(poetySentence.getData().getOrigin().getContent());
+                    System.out.println(arr[i]);
+                    content.setText(arr[i]);
+                }
+                String[] arr1 = new String[5];
+                for(int i=0;i<=poetySentence.getData().getMatchTags().size();i++){
+                    arr1[i] = String.valueOf(poetySentence.getData().getMatchTags());
+                    System.out.println(arr1[i]);
+                }
+                reason.setText(String.valueOf(arr1[0]));
+                poem.setText(poetySentence.getData().getContent());
+                System.out.println(poetySentence.getData().getContent());
+            }
+
+            @Override
+            public void error(JinrishiciRuntimeException e) {
+                //TODO do something else
+            }
+        });
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString = prefs.getString("weather",null);
@@ -129,6 +207,15 @@ public class WeatherActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 drawerLayout.openDrawer(GravityCompat.START); // 打开滑动菜单
+            }
+        });
+
+        //添加常用城市跳转页面
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) { //跳转到添加常用城市界面
+                Intent intent = new Intent(WeatherActivity.this,AddCityActivity.class);//从天气页面跳转到添加常用城市界面
+                startActivity(intent);
             }
         });
     }
@@ -282,4 +369,128 @@ public class WeatherActivity extends AppCompatActivity {
         super.onDestroy();
         mLocationClient.stop();
     }
+
+
+
+    /** 本段代码实现了从今日诗词api获得token
+     * 并存储在本地sharepreference里，
+     * 便于后面返回json数据使用 **/
+
+    public void getPoemToken(){
+        String url = "https://v2.jinrishici.com/token";
+        HttpUtil.sendOkHttpRequest(url, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                System.out.println("获取Token失败！");
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if(response != null){
+                    try {
+                        String responseData=response.body().string();
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        String token = jsonObject.getString(String.valueOf("data"));
+                        System.out.println("当前获取token为："+token);
+                        System.out.println("获取Token成功！！");
+                        if (check()){
+                            System.out.println("本地已有token数据，请直接使用！！");
+                            read();
+                        }else{
+                            saveToPre(token);
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }}
+        });
+    }
+
+    /** sharepreference类的存储和读取方法
+     * @return**/
+    private String readPre() {
+        SharedPreferences sp = getSharedPreferences("TokenName",MODE_PRIVATE);
+        String Token = sp.getString("Token","");
+        if(Token != null){
+            System.out.println("从sharepreference读取Token成功！！");
+        }else {
+            System.out.println("本地无数据，请重新获取！");
+        }
+
+        return Token;
+
+    }
+    private String read(){
+        SharedPreferences sp = getSharedPreferences("TokenName",MODE_PRIVATE);
+        String Token = sp.getString("Token","");
+        System.out.println("本地Token为：" +Token);
+        return Token;
+    }
+
+    /** 检查本地是否有数据**/
+    private boolean check(){
+        if(readPre() !=null){
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+
+    /** 存储token到本地**/
+    public void saveToPre(String token) {
+        SharedPreferences sp = getSharedPreferences("TokenName",MODE_PRIVATE);
+        SharedPreferences.Editor edit  = sp.edit();
+        edit.putString("Token",token);
+        edit.apply();
+        System.out.println("存入Token成功！！");
+    }
+
+    public void getThePoem(){
+        String TOK =  read();
+        Request.Builder builder = new Request.Builder()
+                .url("https://v2.jinrishici.com/sentence")
+                .addHeader( "X-User-Token", TOK );
+        Request build = builder.build();
+
+        OkHttpClient client = new OkHttpClient.Builder().readTimeout( 5000, TimeUnit.SECONDS ).build();
+        Call call = client.newCall( build );
+        call.enqueue( new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                System.out.println("获取数据失败！");
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if(response != null){
+                    try {
+                        final String responseData = response.body().string();
+                        final Poetry p = Utility.handlePoetryResponse(responseData);
+                        JSONObject poetry = new JSONObject(responseData);
+                        System.out.println(poetry);
+                        SharedPreferences.Editor editor = PreferenceManager
+                                .getDefaultSharedPreferences(WeatherActivity.this).edit();
+                        editor.putString("poetry", responseData);
+                        editor.clear();
+                        editor.apply();
+
+
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        });
+    }
+
+    public void showPoetry(Poetry poetry){
+        String content = poetry.data.singlePoem;
+        TextView theshowpoem =  findViewById(R.id.data_content);
+        theshowpoem.setText(content);
+    }
+
+
 }

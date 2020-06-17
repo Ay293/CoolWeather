@@ -40,14 +40,28 @@
 
                     <include layout="@layout/title" />
 
+                    <!--  添加常用城市按钮  -->
+                    <Button
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:id="@+id/add_city"
+                        android:layout_marginLeft="10dp"
+                        android:layout_alignParentLeft="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/add"/>
+
                     <include layout="@layout/now" />
+
+                    <include layout="@layout/poem" />
 
                     <include layout="@layout/forecast" />
 
                     <include layout="@layout/aqi" />
 
                     <include layout="@layout/suggestion" />
+                    <include layout="@layout/poetryshow" />
                 </LinearLayout>
+
             </ScrollView>
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
