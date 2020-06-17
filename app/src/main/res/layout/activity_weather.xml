@@ -44,7 +44,7 @@
                     <Button
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:id="@+id/add_city_button"
+                        android:id="@+id/add_city"
                         android:layout_marginLeft="10dp"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
@@ -52,11 +52,14 @@
 
                     <include layout="@layout/now" />
 
+                    <include layout="@layout/poem" />
+
                     <include layout="@layout/forecast" />
 
                     <include layout="@layout/aqi" />
 
                     <include layout="@layout/suggestion" />
+                    <include layout="@layout/poetryshow" />
                 </LinearLayout>
 
             </ScrollView>
