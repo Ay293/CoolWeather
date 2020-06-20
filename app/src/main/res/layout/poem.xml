@@ -16,11 +16,11 @@
         android:typeface="serif"/>
 
     <TextView
-        android:layout_width="370dp"
+        android:layout_width="365dp"
         android:layout_height="30dp"
         android:id="@+id/data_content"
-        android:layout_margin="64dp"
-        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:layout_marginLeft="18dp"
         android:textSize="22dp"
         />
 
