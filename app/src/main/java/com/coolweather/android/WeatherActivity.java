@@ -1,6 +1,7 @@
 package com.coolweather.android;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -8,6 +9,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -129,6 +131,9 @@ public class WeatherActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         navButton = findViewById(R.id.nav_button);
 
+        AppCompatDelegate.setDefaultNightMode(
+                AppCompatDelegate.MODE_NIGHT_NO);//设置当前主题为日间主题
+
         addButton = findViewById(R.id.add_city);
 
         //常用城市天气切换
@@ -197,10 +202,24 @@ public class WeatherActivity extends AppCompatActivity {
 
         String bingPic = prefs.getString("bing_pic",null); // 尝试从缓存中读取背景图
         if(bingPic != null){
-            Glide.with(this).load(bingPic).into(bingPicImg);  //如果有则用Glide加载
+           // Glide.with(this).load(bingPic).into(bingPicImg);  //如果有则用Glide加载
         }else{
-            loadBingPic(); //如果没有则调用此方法网络请求加载
+       //     loadBingPic(); //如果没有则调用此方法网络请求加载
         }
+
+
+        TextView text = findViewById(R.id.text);
+        text.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                getDelegate().setLocalNightMode(currentNightMode == Configuration.UI_MODE_NIGHT_NO
+                        ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+                // 同样需要调用recreate方法使之生效
+                recreate();
+            }
+        });//选择主题切换
+
 
         //打开滑动菜单
         navButton.setOnClickListener(new View.OnClickListener() {
@@ -249,7 +268,7 @@ public class WeatherActivity extends AppCompatActivity {
                         swipeRefreshLayout.setRefreshing(false); // 表示刷新事件结束并隐藏刷新进度条
                     }
                 });
-                loadBingPic();
+            //    loadBingPic();
             }
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
@@ -263,7 +282,7 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
         });
-        loadBingPic();
+      //  loadBingPic();
     }
     /**
      * 处理并展示Weather实体类中的数据

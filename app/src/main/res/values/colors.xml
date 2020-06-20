@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#E6E6FA</color>
+    <!-- 日间模式 -->
+    <color name="white_btn_color">#3BB32E</color>
+    <color name="black_tx_color">#333333</color>
+
+    <!-- 夜间模式 -->
+    <color name="black_btn_color">#aa7788</color>
+    <color name="white_tx_color">#f0f0f0</color>
+
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="poem_color">#F1EEEE</color>
+
+    <color name="textColor">#FF000000</color>
+    <color name="backgroundColor">#FFFFFF</color>
+    <color name="textColorPrimary">#616161</color>
+    <color name="viewBackground">@android:color/white</color>
     <color name="poem_title">#000000</color>
 
 
