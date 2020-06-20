@@ -26,6 +26,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
@@ -57,8 +58,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
-    private TextView positionText;  //定位显示
+    private Button positionButton;  //定位显示
     public LocationClient mLocationClient;  //定位实现
+    public static String currentCity= "";   //当前定位城市
     private ScrollView weatherLayout;  //滑动显示区
     public DrawerLayout drawerLayout;  //滑动菜单
     private Button navButton;  //启动滑动菜单的按钮
@@ -108,7 +110,7 @@ public class WeatherActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_weather);
-        positionText=findViewById(R.id.position);
+        positionButton = findViewById(R.id.position_button);
         //初始化各组件
         poem = findViewById(R.id.data_content);
         title = findViewById(R.id.origin_title);
@@ -167,9 +169,6 @@ public class WeatherActivity extends AppCompatActivity {
                 recreate();
             }
         });//选择主题切换
-
-
-
 
 
         JinrishiciFactory.init(this);
@@ -249,7 +248,19 @@ public class WeatherActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        //点击定位
+        positionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requestLocation();
+                requestWeather1(weatherId);
+                titleCity.setText(WeatherActivity.currentCity);
+                Toast.makeText(WeatherActivity.this,"定位当前城市成功！",Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
     /**
      * 根据天气Id请求城市天气信息
      */
@@ -265,7 +276,6 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(WeatherActivity.this,"定位当前城市成功！",Toast.LENGTH_SHORT).show();
                         requestLocation();
                         if(weather!=null && "ok".equals(weather.status)){
                             //缓存有效的weather对象(实际上缓存的是字符串)
@@ -368,16 +378,18 @@ public class WeatherActivity extends AppCompatActivity {
         });
     }
 
-    public class MyLocationListener implements BDLocationListener {
+    //实现BDAbstractLocationListener接口
+    public class MyLocationListener extends BDAbstractLocationListener {
         @Override
         public void onReceiveLocation(final BDLocation location) {
+            //此处的BDLocation为定位结果信息类，通过它的各种get方法可获取定位相关的全部结果
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     StringBuilder currentPosition=new StringBuilder();
-                    currentPosition.append(location.getDistrict());
-                    positionText.setText(currentPosition);
-                    Toast.makeText(WeatherActivity.this,"djjfjhsj",Toast.LENGTH_SHORT).show();
+                    currentPosition.append(location.getDistrict());//获取区/县信息
+                    currentCity =location.getDistrict();
+                    titleCity.setText(currentPosition);
                 }
             });
         }
@@ -399,6 +411,99 @@ public class WeatherActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         mLocationClient.stop();
+    }
+
+    /**
+     * 根据天气Id请求城市天气信息
+     */
+    public void requestWeather1(final String weatherId){
+        String weatherUrl = "http://guolin.tech/api/weather?cityid=" + weatherId
+                + "&key=6ebfd087db8144cbaab3884bb8f4b19d"; // 这里的key设置为第一个实训中获取到的API Key
+        // 组装地址并发出请求
+        HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                final String responseText = response.body().string();
+                final Weather weather = Utility.handleWeatherResponse(responseText); // 将返回数据转换为Weather对象
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        requestLocation();
+                        if(weather!=null && "ok".equals(weather.status)){
+                            //缓存有效的weather对象(实际上缓存的是字符串)
+                            SharedPreferences.Editor editor = PreferenceManager
+                                    .getDefaultSharedPreferences(WeatherActivity.this).edit();
+                            editor.putString("weather",responseText);
+                            editor.apply();
+                            showWeatherInfo1(weather); // 显示内容
+                        }else{
+                            Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        }
+                        swipeRefreshLayout.setRefreshing(false); // 表示刷新事件结束并隐藏刷新进度条
+                    }
+                });
+               // loadBingPic();
+            }
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                e.printStackTrace();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                });
+            }
+        });
+       // loadBingPic();
+    }
+
+
+    /**
+     * 处理并展示Weather实体类中的数据
+     * @param weather
+     */
+    private void showWeatherInfo1(Weather weather){
+        // 从Weather对象中获取数据
+        String cityName = WeatherActivity.currentCity;
+        String updateTime = weather.basic.update.updateTime.split(" ")[1]; //按24小时计时的时间
+        String degree = weather.now.temperature + "°C";
+        String weatherInfo = weather.now.more.info;
+        // 将数据显示到对应控件上
+        titleCity.setText(cityName);
+        titleUpdateTime.setText(updateTime);
+        degreeText.setText(degree);
+        weatherInfoText.setText(weatherInfo);
+        forecastLayout.removeAllViews();
+        for(Forecast forecast:weather.forecastList){ // 循环处理每天的天气信息
+            View view = LayoutInflater.from(this).inflate(R.layout.forecast_item,forecastLayout,false);
+            // 加载布局
+            TextView dateText = view.findViewById(R.id.date_text);
+            TextView infoText = view.findViewById(R.id.info_text);
+            TextView maxText = view.findViewById(R.id.max_text);
+            TextView minText = view.findViewById(R.id.min_text);
+            // 设置数据
+            dateText.setText(forecast.date);
+            infoText.setText(forecast.more.info);
+            maxText.setText(forecast.temperature.max);
+            minText.setText(forecast.temperature.min);
+            // 添加到父布局
+            forecastLayout.addView(view);
+        }
+        if(weather.aqi != null){
+            aqiText.setText(weather.aqi.city.aqi);
+            pm25Text.setText(weather.aqi.city.pm25);
+        }
+        String comfort = "舒适度: " + weather.suggestion.comfort.info;
+        String carWash = "洗车指数: " + weather.suggestion.carWash.info;
+        String sport = "运动建议: "+ weather.suggestion.sport.info;
+        comfortText.setText(comfort);
+        carWashText.setText(carWash);
+        sportText.setText(sport);
+        weatherLayout.setVisibility(View.VISIBLE); // 将天气信息设置为可见
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
 
 

@@ -145,21 +145,26 @@ public class ChooseAreaFragment extends Fragment {
     private void queryCities() {
         titleText.setText(selectedProvince.getProvinceName());
         backButton.setVisibility(View.VISIBLE);
-        cityList = DataSupport.where("provinceId=?", String.valueOf(selectedProvince.getId()))
-                .find(City.class);
-        if (cityList.size() > 0) {
-            dataList.clear();
-            for (City city : cityList) {
-                dataList.add(city.getCityName());
+        try {
+            cityList = DataSupport.where("provinceId=?", String.valueOf(selectedProvince.getId()))
+                    .find(City.class);
+            if (cityList.size() > 0) {
+                dataList.clear();
+                for (City city : cityList) {
+                    dataList.add(city.getCityName());
+                }
+                adapter.notifyDataSetChanged();
+                listView.setSelection(0);
+                currentLevel = LEVEL_CITY;
+            } else {
+                int provinceCode = selectedProvince.getProvinceCode();
+                String address = "http://guolin.tech/api/china/" + provinceCode;
+                queryFromServer(address, "city");
             }
-            adapter.notifyDataSetChanged();
-            listView.setSelection(0);
-            currentLevel = LEVEL_CITY;
-        } else {
-            int provinceCode = selectedProvince.getProvinceCode();
-            String address = "http://guolin.tech/api/china/" + provinceCode;
-            queryFromServer(address, "city");
+        }catch (Exception e){
+            e.printStackTrace();
         }
+
     }
     /**
      * 查询选中市内所有的县，优先从数据库中查询，如果没有查询到就从服务器中查询数据

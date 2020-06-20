@@ -13,6 +13,27 @@
         android:layout_centerVertical="true"
         android:background="@drawable/ic_home"/>
 
+    <!-- 显示定位的按钮 -->
+    <Button
+        android:id="@+id/position_button"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_centerVertical="true"
+        android:background="@drawable/position"
+        android:layout_toLeftOf="@+id/title_city"
+        android:layout_marginRight="10dp"/>
+
+    <!--  添加常用城市按钮  -->
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:id="@+id/add_city"
+        android:layout_marginLeft="50dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/nav_button"
+        android:background="@drawable/add"/>
+
     <!-- 居中显示城市名 -->
     <TextView
         android:id="@+id/title_city"

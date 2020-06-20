@@ -148,19 +148,19 @@ public class ChooseCityFragment extends Fragment {
         backButton.setVisibility(View.VISIBLE);
         cityList = DataSupport.where("provinceId=?", String.valueOf(selectedProvince.getId()))
                 .find(City.class);
-        if (cityList.size() > 0) {
-            dataList.clear();
-            for (City city : cityList) {
-                dataList.add(city.getCityName());
+            if (cityList.size() > 0) {
+                dataList.clear();
+                for (City city : cityList) {
+                    dataList.add(city.getCityName());
+                }
+                adapter.notifyDataSetChanged();
+                listView.setSelection(0);
+                currentLevel = LEVEL_CITY;
+            } else {
+                int provinceCode = selectedProvince.getProvinceCode();
+                String address = "http://guolin.tech/api/china/" + provinceCode;
+                queryFromServer(address, "city");
             }
-            adapter.notifyDataSetChanged();
-            listView.setSelection(0);
-            currentLevel = LEVEL_CITY;
-        } else {
-            int provinceCode = selectedProvince.getProvinceCode();
-            String address = "http://guolin.tech/api/china/" + provinceCode;
-            queryFromServer(address, "city");
-        }
     }
 
     /**
