@@ -75,6 +75,8 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView comfortText;
     private TextView carWashText;
     private TextView sportText;
+    private Button myButton;
+
 
 
     private Button addButton;
@@ -135,7 +137,6 @@ public class WeatherActivity extends AppCompatActivity {
                 AppCompatDelegate.MODE_NIGHT_NO);//设置当前主题为日间主题
 
         addButton = findViewById(R.id.add_city);
-
         //常用城市天气切换
         Intent intent_add = getIntent();
         String Id = intent_add.getStringExtra("id");
@@ -145,6 +146,29 @@ public class WeatherActivity extends AppCompatActivity {
         shici = findViewById(R.id.data_content);// 找到对应的诗词控件
         face = Typeface.createFromAsset(shici.getContext().getAssets(), "newFont.TTF");// 这里是使用Typeface获取到放在assets里的字体
         shici.setTypeface(face);// 将字体运用到控件当中
+
+        myButton=findViewById(R.id.btn1);
+        myButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(WeatherActivity.this, Main2Activity.class);
+                startActivity(intent);
+            }
+        });
+
+        TextView text = findViewById(R.id.text);
+        text.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+                getDelegate().setLocalNightMode(currentNightMode == Configuration.UI_MODE_NIGHT_NO
+                        ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
+                // 同样需要调用recreate方法使之生效
+                recreate();
+            }
+        });//选择主题切换
+
+
 
 
 
@@ -207,18 +231,6 @@ public class WeatherActivity extends AppCompatActivity {
        //     loadBingPic(); //如果没有则调用此方法网络请求加载
         }
 
-
-        TextView text = findViewById(R.id.text);
-        text.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int currentNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-                getDelegate().setLocalNightMode(currentNightMode == Configuration.UI_MODE_NIGHT_NO
-                        ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
-                // 同样需要调用recreate方法使之生效
-                recreate();
-            }
-        });//选择主题切换
 
 
         //打开滑动菜单

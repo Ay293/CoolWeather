@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:id="@+id/history_title"
+        android:background="@color/mainBg">
+        <TextView
+            android:id="@+id/history_title_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="历史上的这一天"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_centerInParent="true"/>
+        <ImageView
+            android:id="@+id/history_iv_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:src="@mipmap/icon_back"/>
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/history_line"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/history_title"
+        android:background="@color/fireRed"/>
+    <ListView
+        android:id="@+id/history_lv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/history_line"
+        android:divider="@null"></ListView>
+    <TextView
+        android:id="@+id/history_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:textStyle="bold"
+        android:textSize="30sp"
+        android:text="暂无数据"
+        android:visibility="gone"/>
+</RelativeLayout>

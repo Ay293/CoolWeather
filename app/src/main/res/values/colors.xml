@@ -17,6 +17,9 @@
     <color name="backgroundColor">#FFFFFF</color>
     <color name="textColorPrimary">#616161</color>
     <color name="viewBackground">@android:color/white</color>
+
+    <color name="mainBg">#FDF5E6</color>
+    <color name="fireRed">#B22222</color>
     <color name="poem_title">#000000</color>
 
 

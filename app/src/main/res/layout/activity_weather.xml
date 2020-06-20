@@ -59,6 +59,10 @@
                     <include layout="@layout/aqi" />
 
                     <include layout="@layout/suggestion" />
+
+
+                    <include layout="@layout/history" />
+
                     <include layout="@layout/poetryshow" />
                     <LinearLayout
                         android:layout_width="match_parent"
